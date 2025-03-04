@@ -21,7 +21,7 @@ def plot_regression_and_cost(x_train, y_train, compute_cost, w, b):
     Parametri:
         x_train: np.array - dati di input
         y_train: np.array - valori target
-        compute_cost: function - funzione per calcolare il costo
+        compute_cost: function - funzione per calcolare il s
         w: float - peso attuale
         b: float - bias attuale
     """
@@ -699,3 +699,519 @@ def plt_divergence(p_hist, J_hist, x_train, y_train, compute_cost):
     # Imposta i limiti degli assi per una migliore visualizzazione
     max_cost = max(np.max(cost_vs_w), np.max(J_hist))
     ax[0].set_ylim(0, max_cost * 1.1)
+
+
+def compute_cost(X, y, w, b):
+    """
+    Calcola la funzione di costo (errore quadratico medio)
+
+    Args:
+        X: Matrice delle caratteristiche
+        y: Vettore dei valori target
+        w: Vettore dei pesi
+        b: Bias
+
+    Returns:
+        Valore della funzione di costo
+    """
+    m = X.shape[0]
+    cost = 0
+
+    # Calcolo della predizione
+    y_pred = X @ w + b
+
+    # Calcolo dell'errore quadratico medio
+    cost = (1 / (2 * m)) * np.sum((y_pred - y) ** 2)
+
+    return cost
+
+
+def compute_gradient_matrix(X, y, w, b):
+    """
+    Calcola i gradienti della funzione di costo rispetto ai parametri w e b
+
+    Args:
+        X: Matrice delle caratteristiche
+        y: Vettore dei valori target
+        w: Vettore dei pesi
+        b: Bias
+
+    Returns:
+        dj_dw: Gradiente rispetto ai pesi w
+        dj_db: Gradiente rispetto al bias b
+    """
+    m, n = X.shape
+
+    # Calcolo della predizione
+    y_pred = X @ w + b
+
+    # Calcolo dei gradienti
+    dj_dw = (1 / m) * (X.T @ (y_pred - y))
+    dj_db = (1 / m) * np.sum(y_pred - y)
+
+    return dj_dw, dj_db
+
+
+def gradient_descent(
+    X, y, w_init, b_init, cost_function, gradient_function, alpha, num_iters
+):
+    """
+    Implementazione dell'algoritmo del gradiente discendente
+
+    Args:
+        X: Matrice delle caratteristiche
+        y: Vettore dei valori target
+        w_init: Valori iniziali dei pesi
+        b_init: Valore iniziale del bias
+        cost_function: Funzione per calcolare il costo
+        gradient_function: Funzione per calcolare i gradienti
+        alpha: Tasso di apprendimento
+        num_iters: Numero di iterazioni
+
+    Returns:
+        w: Pesi ottimizzati
+        b: Bias ottimizzato
+        J_history: Storia dei valori della funzione di costo
+    """
+    m = X.shape[0]
+    w = w_init
+    b = b_init
+    J_history = []
+
+    for i in range(num_iters):
+        # Calcola gradienti
+        dj_dw, dj_db = gradient_function(X, y, w, b)
+
+        # Aggiorna parametri
+        w = w - alpha * dj_dw
+        b = b - alpha * dj_db
+
+        # Salva il valore della funzione di costo
+        if i % 100 == 0:
+            J_history.append(cost_function(X, y, w, b))
+
+    return w, b, J_history
+
+
+def run_gradient_descent_lin(X, y, iterations=1000, alpha=1e-6):
+    """
+    Esegue l'algoritmo del gradiente discendente per trovare i parametri ottimali di un modello lineare.
+
+    Args:
+        X: Matrice delle caratteristiche di input
+        y: Vettore dei valori target
+        iterations: Numero di iterazioni per l'algoritmo del gradiente discendente
+        alpha: Tasso di apprendimento (learning rate)
+
+    Returns:
+        w_out: Vettore dei pesi ottimizzati
+        b_out: Valore del bias ottimizzato
+    """
+    m, n = X.shape  # m = numero di esempi, n = numero di caratteristiche
+
+    # Inizializzazione dei parametri
+    initial_w = np.zeros(n)  # Inizializza i pesi a zero
+    initial_b = 0  # Inizializza il bias a zero
+
+    # Esegui l'algoritmo del gradiente discendente
+    w_out, b_out, hist_out = gradient_descent(
+        X,
+        y,
+        initial_w,
+        initial_b,
+        compute_cost,
+        compute_gradient_matrix,
+        alpha,
+        iterations,
+    )
+
+    print(
+        f"Parametri trovati tramite gradiente discendente: w: {w_out}, b: {b_out:0.4f}"
+    )
+
+    return w_out, b_out
+
+
+def plot_data(X, y, ax):
+    pos = y[:, 0] == 1
+    neg = y[:, 0] == 0
+    ax.plot(X[pos, 0], X[pos, 1], "k+", label="Positive")
+    ax.plot(X[neg, 0], X[neg, 1], "ko", label="Negative")
+    ax.legend()
+
+
+# Definizione dei colori
+colors = {
+    "blue": "#0096ff",
+    "orange": "#FF9300",
+    "darkred": "#C00000",
+    "magenta": "#FF40FF",
+    "purple": "#7030A0",
+}
+
+# Assegnazione dei colori a variabili
+blue = colors["blue"]
+orange = colors["orange"]
+darkred = colors["darkred"]
+magenta = colors["magenta"]
+purple = colors["purple"]
+
+# Lista dei colori
+color_list = [blue, orange, darkred, magenta, purple]
+
+# Importazione della libreria necessaria
+from matplotlib.patches import FancyArrowPatch
+
+
+def draw_threshold(ax, threshold):
+    """Disegna una soglia sull'asse specificato."""
+    y_limits = ax.get_ylim()
+    x_limits = ax.get_xlim()
+
+    # Riempimento delle aree sopra e sotto la soglia
+    ax.fill_between(
+        [x_limits[0], threshold], [y_limits[1], y_limits[1]], alpha=0.2, color=blue
+    )
+    ax.fill_between(
+        [threshold, x_limits[1]], [y_limits[1], y_limits[1]], alpha=0.2, color=darkred
+    )
+
+    # Annotazioni per indicare le condizioni
+    ax.annotate(
+        "z >= 0",
+        xy=[threshold, 0.5],
+        xycoords="data",
+        xytext=[30, 5],
+        textcoords="offset points",
+    )
+    ax.annotate(
+        "z < 0",
+        xy=[threshold, 0.5],
+        xycoords="data",
+        xytext=[-50, 5],
+        textcoords="offset points",
+        ha="left",
+    )
+
+    # Freccia verso destra per z >= 0
+    arrow_right = FancyArrowPatch(
+        posA=(threshold, 0.5),
+        posB=(threshold + 3, 0.5),
+        color=darkred,
+        arrowstyle="simple, head_width=5, head_length=10, tail_width=0.0",
+    )
+    ax.add_artist(arrow_right)
+
+    # Freccia verso sinistra per z < 0
+    arrow_left = FancyArrowPatch(
+        posA=(threshold, 0.5),
+        posB=(threshold - 3, 0.5),
+        color=blue,
+        arrowstyle="simple, head_width=5, head_length=10, tail_width=0.0",
+    )
+    ax.add_artist(arrow_left)
+
+
+def sigmoid(z):
+    """
+    Funzione sigmoide
+
+    Args:
+        z: input scalare o numpy array
+
+    Returns:
+        g: sigmoide di z
+    """
+    return 1 / (1 + np.exp(-z))
+
+
+def compute_cost_logistic_sq_err(X, y, w, b):
+    """
+    Calcola l'errore quadratico medio per la regressione logistica
+
+    Args:
+        X: dati di input (m, 1)
+        y: target (m,)
+        w: parametro del peso
+        b: parametro del bias
+
+    Returns:
+        costo: errore quadratico medio
+    """
+    m = X.shape[0]
+
+    # Calcola il valore z = w*x + b
+    z = np.dot(X, w) + b
+
+    # Applica la funzione sigmoide per ottenere le previsioni
+    f_wb = sigmoid(z)
+
+    # Calcola l'errore quadratico
+    cost = np.sum((f_wb - y) ** 2) / (2 * m)
+
+    return cost
+
+
+def plt_logistic_squared_error(X, y):
+    """
+    Visualizza la superficie dell'errore quadratico per la regressione logistica
+
+    Args:
+        X: dati di input (m,)
+        y: target (m,)
+    """
+    # Crea una griglia di valori per w e b
+    wx, by = np.meshgrid(np.linspace(-6, 12, 50), np.linspace(10, -20, 40))
+    points = np.c_[wx.ravel(), by.ravel()]
+    cost = np.zeros(points.shape[0])
+
+    # Calcola il costo per ogni combinazione di (w, b)
+    for i in range(points.shape[0]):
+        w, b = points[i]
+        cost[i] = compute_cost_logistic_sq_err(X.reshape(-1, 1), y, w, b)
+
+    # Riforma il costo nella stessa forma della griglia
+    cost = cost.reshape(wx.shape)
+
+    # Crea la figura 3D
+    fig = plt.figure(figsize=(10, 8))
+    fig.canvas.toolbar_visible = False
+    fig.canvas.header_visible = False
+    fig.canvas.footer_visible = False
+
+    ax = fig.add_subplot(1, 1, 1, projection="3d")
+
+    # Plotta la superficie del costo
+    surf = ax.plot_surface(wx, by, cost, alpha=0.6, cmap=cm.jet)
+
+    # Aggiungi etichette e titolo
+    ax.set_xlabel("w", fontsize=16)
+    ax.set_ylabel("b", fontsize=16)
+    ax.set_zlabel("Cost", rotation=90, fontsize=16)
+    ax.set_title('"Logistic" Squared Error Cost vs (w, b)')
+
+    # Rendi trasparenti i pannelli degli assi
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+
+    # Aggiungi una colorbar
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
+
+    plt.show()
+    return fig
+
+
+def plt_simple_example(x_train, y_train):
+    """
+    Visualizza un esempio di regressione logistica su dati di ammissione studenti.
+
+    Args:
+        x_train: array con il numero di domande corrette
+        y_train: array con le etichette (0 per non ammesso, 1 per ammesso)
+    """
+    # Crea una nuova figura
+    plt.figure(figsize=(8, 6))
+
+    # Separa gli studenti ammessi e non ammessi
+    non_ammessi = np.where(y_train == 0)[0]
+    ammessi = np.where(y_train == 1)[0]
+
+    # Plotta gli studenti non ammessi (cerchi blu)
+    plt.scatter(
+        x_train[non_ammessi],
+        y_train[non_ammessi],
+        color="blue",
+        marker="o",
+        s=100,
+        alpha=0.8,
+        edgecolor="black",
+        linewidth=1,
+        label="non ammesso",
+    )
+
+    # Plotta gli studenti ammessi (x rosse)
+    plt.scatter(
+        x_train[ammessi],
+        y_train[ammessi],
+        color="red",
+        marker="x",
+        s=100,
+        alpha=0.8,
+        linewidth=2,
+        label="ammesso",
+    )
+
+    # Aggiungi titolo e etichette
+    plt.title(
+        "Esempio di Regressione Logistica sull'Ammissione degli Studenti", fontsize=14
+    )
+    plt.xlabel("Numero di Domande Corrette", fontsize=12)
+    plt.ylabel("Ammissione (0/1)", fontsize=12)
+
+    # Imposta i limiti degli assi
+    plt.xlim(-0.5, max(x_train) + 0.5)
+    plt.ylim(-0.1, 1.1)
+
+    # Aggiungi legenda
+    plt.legend(loc="upper left")
+
+    # Mostra la griglia
+    plt.grid(True, alpha=0.3)
+
+    # Mostra il grafico
+    plt.tight_layout()
+    plt.show()
+
+    return plt
+
+
+def plot_two_logistic_loss_curves():
+    # Creazione di predizioni da 0.001 a 0.999 (per evitare log(0))
+    pred = np.linspace(0.001, 0.999, 1000)
+
+    # Calcolo delle funzioni di perdita
+    loss_y1 = -np.log(pred)  # loss quando t=1
+    loss_y0 = -np.log(1 - pred)  # loss quando t=0
+
+    # Creazione della figura con due subplot
+    fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+    # Plot per t=1
+    ax[0].plot(pred, loss_y1, "b-", linewidth=2)
+    ax[0].set_xlim([0, 1])
+    ax[0].set_ylim([0, 5])
+    ax[0].set_xlabel("$y(x_n,w)$")
+    ax[0].set_ylabel("loss")
+    ax[0].set_title("$t = 1$")
+
+    # Annotazioni per t=1
+    ax[0].annotate(
+        "loss diminuisce quando la predizione\nsi avvicina dal target",
+        xy=(0.3, 2),
+        xytext=(0.2, 2.5),
+        arrowprops=dict(facecolor="orange", shrink=0.05, width=2),
+    )
+
+    ax[0].annotate(
+        "predizione\ncorrisponde\nal target",
+        xy=(0.95, 0.1),
+        xytext=(0.7, 0.8),
+        arrowprops=dict(facecolor="orange", shrink=0.05, width=2),
+    )
+
+    # Plot per t=0
+    ax[1].plot(pred, loss_y0, "b-", linewidth=2)
+    ax[1].set_xlim([0, 1])
+    ax[1].set_ylim([0, 5])
+    ax[1].set_xlabel("$y(x_n,w)$")
+    ax[1].set_title("$t = 0$")
+
+    # Annotazioni per t=0
+    ax[1].annotate(
+        "loss aumenta quando la predizione\nsi allontana dal target",
+        xy=(0.7, 2),
+        xytext=(0.6, 2.5),
+        arrowprops=dict(facecolor="orange", shrink=0.05, width=2),
+    )
+
+    ax[1].annotate(
+        "predizione\ncorrisponde\nal target",
+        xy=(0.05, 0.1),
+        xytext=(0.25, 0.8),
+        arrowprops=dict(facecolor="orange", shrink=0.05, width=2),
+    )
+
+    # Titolo generale
+    plt.suptitle("Curve di Loss per Due Valori Target Categorici", fontsize=16)
+
+    plt.tight_layout()
+    plt.show()
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
+
+
+def plot_logistic_cost_surface_3d(scale_type="linear"):
+    """
+    Visualizza la superficie di costo della regressione logistica in 3D
+
+    Parametri:
+    scale_type: 'linear' o 'log' per scala lineare o logaritmica
+    """
+    # Genera dati di esempio
+    np.random.seed(42)
+    n_samples = 100
+
+    # Crea alcuni dati di esempio per una classificazione binaria
+    X = np.random.randn(n_samples, 2)
+    # Genera target basati su una linea di separazione
+    t = (X[:, 0] + X[:, 1] > 0).astype(int)
+
+    # Crea griglia per visualizzazione
+    w0_vals = np.linspace(-5, 5, 50)
+    w1_vals = np.linspace(-5, 5, 50)
+    w0_grid, w1_grid = np.meshgrid(w0_vals, w1_vals)
+    cost_grid = np.zeros_like(w0_grid)
+
+    # Calcola il costo per ogni coppia di parametri (w0, w1)
+    for i in range(len(w0_vals)):
+        for j in range(len(w1_vals)):
+            w0 = w0_vals[i]
+            w1 = w1_vals[j]
+
+            # Calcola le predizioni usando la sigmoide
+            z = w0 + w1 * X[:, 0]  # Semplificato, uso solo la prima feature
+            y_pred = 1 / (1 + np.exp(-z))
+
+            # Calcola la funzione di perdita logistica
+            epsilon = 1e-15  # Evita log(0)
+            y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+            loss = -t * np.log(y_pred) - (1 - t) * np.log(1 - y_pred)
+            cost = np.mean(loss)
+
+            cost_grid[j, i] = cost
+
+    # Applica scala logaritmica se richiesto
+    if scale_type == "log":
+        cost_grid = np.log(
+            cost_grid + 1e-10
+        )  # Aggiungi un piccolo valore per evitare log(0)
+        title = "Superficie di Costo della Regressione Logistica (Scala Logaritmica)"
+    else:
+        title = "Superficie di Costo della Regressione Logistica (Scala Lineare)"
+
+    # Crea la figura 3D
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Plot superficie
+    surf = ax.plot_surface(
+        w0_grid,
+        w1_grid,
+        cost_grid,
+        cmap=cm.coolwarm,
+        linewidth=0,
+        antialiased=True,
+        alpha=0.8,
+    )
+
+    # Etichette
+    ax.set_xlabel("$w_0$")
+    ax.set_ylabel("$w_1$")
+
+    if scale_type == "log":
+        ax.set_zlabel("$\log(E(y,w))$")
+    else:
+        ax.set_zlabel("$E(y,w)$")
+
+    ax.set_title(title)
+
+    # Aggiungi colorbar
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+
+    plt.tight_layout()
+    plt.show()
