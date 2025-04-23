@@ -1,2 +1,4 @@
 runtime/
 /do_not_share
+__pycache__/
+2_LinearRegression/deeplearning.mplstyle
